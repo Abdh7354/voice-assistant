@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Voice Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <style>
+    /* ─── RESET & BASE ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #07080a;
+      --surface:   #0e1014;
+      --card:      #141720;
+      --border:    rgba(255,255,255,0.07);
+      --border-hi: rgba(99,215,255,0.35);
+      --accent:    #63d7ff;
+      --accent2:   #7b61ff;
+      --success:   #3dffa0;
+      --danger:    #ff5f5f;
+      --warn:      #ffd060;
+      --text:      #e8eaf0;
+      --muted:     #6b7280;
+      --mono:      'JetBrains Mono', monospace;
+      --display:   'Syne', sans-serif;
+    }
+
+    html { height: 100%; }
+
+    body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--display);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+      overflow-x: hidden;
+    }
+
+    /* ─── ANIMATED BACKGROUND GRID ──────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(99,215,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,215,255,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: -30%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(99,215,255,0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── LAYOUT ────────────────────────────────────────── */
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 720px;
+    }
+
+    /* ─── HEADER ────────────────────────────────────────── */
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+      animation: fadeDown 0.7s ease both;
+    }
+
+    .logo-ring {
+      width: 72px; height: 72px;
+      margin: 0 auto 1.25rem;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      position: relative;
+      box-shadow: 0 0 32px rgba(99,215,255,0.2);
+      animation: pulse-ring 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse-ring {
+      0%,100% { box-shadow: 0 0 20px rgba(99,215,255,0.15); }
+      50%      { box-shadow: 0 0 48px rgba(99,215,255,0.4); }
+    }
+
+    h1 {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff 30%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      margin-top: 0.4rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-family: var(--mono);
+      letter-spacing: 0.04em;
+    }
+
+    /* ─── STATUS PILL ────────────────────────────────────── */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 0.9rem;
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      transition: all 0.3s;
+    }
+
+    .status-pill.online  { border-color: rgba(61,255,160,0.35); color: var(--success); }
+    .status-pill.error   { border-color: rgba(255,95,95,0.35);  color: var(--danger); }
+    .status-pill.busy    { border-color: rgba(255,208,96,0.35); color: var(--warn); }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-pill.online .dot { animation: blink 2s ease infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ─── MIC BUTTON ─────────────────────────────────────── */
+    .mic-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      margin: 2rem 0;
+      animation: fadeUp 0.7s 0.15s ease both;
+    }
+
+    .mic-btn {
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      border: 2px solid var(--border-hi);
+      background: var(--card);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.6rem;
+      transition: all 0.25s;
+      position: relative;
+      outline: none;
+    }
+
+    .mic-btn:hover  { transform: scale(1.06); background: #1a1f2e; }
+    .mic-btn:active { transform: scale(0.97); }
+
+    .mic-btn.listening {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 0 rgba(255,95,95,0.5);
+      animation: sonar 1.2s ease-out infinite;
+      background: rgba(255,95,95,0.08);
+    }
+
+    .mic-btn.processing {
+      border-color: var(--warn);
+      animation: spin-border 1s linear infinite;
+    }
+
+    @keyframes sonar {
+      0%   { box-shadow: 0 0 0 0   rgba(255,95,95,0.5); }
+      100% { box-shadow: 0 0 0 40px rgba(255,95,95,0); }
+    }
+
+    @keyframes spin-border {
+      0%   { border-top-color: var(--warn); }
+      25%  { border-right-color: var(--warn); }
+      50%  { border-bottom-color: var(--warn); }
+      75%  { border-left-color: var(--warn); }
+      100% { border-top-color: var(--warn); }
+    }
+
+    .mic-label {
+      font-size: 0.78rem;
+      font-family: var(--mono);
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.3s;
+    }
+
+    .mic-label.active { color: var(--danger); }
+
+    /* ─── WAVEFORM ────────────────────────────────────────── */
+    .waveform {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 40px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .waveform.active { opacity: 1; }
+
+    .bar {
+      width: 4px;
+      border-radius: 4px;
+      background: var(--danger);
+      transform-origin: center;
+    }
+
+    .bar:nth-child(1) { animation: wave 0.8s 0.0s ease-in-out infinite alternate; }
+    .bar:nth-child(2) { animation: wave 0.8s 0.1s ease-in-out infinite alternate; }
+    .bar:nth-child(3) { animation: wave 0.8s 0.2s ease-in-out infinite alternate; }
+    .bar:nth-child(4) { animation: wave 0.8s 0.3s ease-in-out infinite alternate; }
+    .bar:nth-child(5) { animation: wave 0.8s 0.4s ease-in-out infinite alternate; }
+    .bar:nth-child(6) { animation: wave 0.8s 0.3s ease-in-out infinite alternate; }
+    .bar:nth-child(7) { animation: wave 0.8s 0.2s ease-in-out infinite alternate; }
+    .bar:nth-child(8) { animation: wave 0.8s 0.1s ease-in-out infinite alternate; }
+    .bar:nth-child(9) { animation: wave 0.8s 0.0s ease-in-out infinite alternate; }
+
+    @keyframes wave {
+      from { height: 6px;  opacity: 0.4; }
+      to   { height: 36px; opacity: 1;   }
+    }
+
+    /* ─── TEXT INPUT ─────────────────────────────────────── */
+    .input-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      animation: fadeUp 0.7s 0.25s ease both;
+    }
+
+    .cmd-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 18px;
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .cmd-input::placeholder { color: var(--muted); }
+    .cmd-input:focus {
+      border-color: var(--border-hi);
+      box-shadow: 0 0 0 3px rgba(99,215,255,0.06);
+    }
+
+    .send-btn {
+      padding: 0 22px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      white-space: nowrap;
+    }
+
+    .send-btn:hover  { background: #8ae4ff; }
+    .send-btn:active { transform: scale(0.96); }
+
+    /* ─── RESULT CARD ─────────────────────────────────────── */
+    .result-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-top: 1.5rem;
+      animation: fadeUp 0.7s 0.35s ease both;
+      transition: border-color 0.3s;
+    }
+
+    .result-card.success { border-color: rgba(61,255,160,0.2); }
+    .result-card.error   { border-color: rgba(255,95,95,0.2); }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-header span {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    .intent-badge {
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      font-weight: 500;
+      background: rgba(99,215,255,0.1);
+      color: var(--accent);
+      border: 1px solid rgba(99,215,255,0.2);
+    }
+
+    .result-body { padding: 18px; }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 14px;
+    }
+
+    .field:last-child { margin-bottom: 0; }
+
+    .field-label {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .field-value {
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .field-value.heard  { color: var(--accent); font-family: var(--mono); }
+    .field-value.resp   { font-weight: 600; font-size: 1.05rem; }
+
+    /* ─── QUICK COMMANDS ─────────────────────────────────── */
+    .quick-section {
+      margin-top: 2rem;
+      animation: fadeUp 0.7s 0.45s ease both;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      gap: 8px;
+    }
+
+    .quick-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .quick-btn:hover {
+      background: var(--card);
+      border-color: var(--border-hi);
+      transform: translateY(-1px);
+    }
+
+    .quick-btn .icon { font-size: 1.1rem; flex-shrink: 0; }
+    .quick-btn .text {
+      font-size: 0.8rem;
+      font-family: var(--mono);
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    /* ─── HISTORY ────────────────────────────────────────── */
+    .history-section {
+      margin-top: 2rem;
+      animation: fadeUp 0.7s 0.55s ease both;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 260px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .history-item:hover {
+      background: var(--card);
+      border-color: rgba(99,215,255,0.2);
+    }
+
+    .h-cmd  { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); }
+    .h-resp { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .h-time { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+
+    /* ─── FOOTER ─────────────────────────────────────────── */
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      animation: fadeUp 0.7s 0.65s ease both;
+    }
+
+    footer a { color: var(--accent); text-decoration: none; }
+
+    /* ─── ANIMATIONS ─────────────────────────────────────── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── SCROLLBAR ──────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ─── TOAST ──────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--card);
+      border: 1px solid var(--border-hi);
+      border-radius: 999px;
+      padding: 10px 22px;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--accent);
+      pointer-events: none;
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.35s;
+      z-index: 999;
+      opacity: 0;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ─── HEADER ────────────────────────────────────────── -->
+  <header>
+    <div class="logo-ring">🎤</div>
+    <h1>Voice Assistant</h1>
+    <p class="subtitle">java + spring boot &nbsp;·&nbsp; vosk stt &nbsp;·&nbsp; nlp</p>
+    <div class="status-pill" id="statusPill">
+      <span class="dot"></span>
+      <span id="statusText">checking...</span>
+    </div>
+  </header>
+
+  <!-- ─── MIC AREA ──────────────────────────────────────── -->
+  <div class="mic-area">
+    <div class="waveform" id="waveform">
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    </div>
+
+    <button class="mic-btn" id="micBtn" onclick="startListening()" title="Click to speak">
+      <span id="micIcon">🎙️</span>
+    </button>
+
+    <span class="mic-label" id="micLabel">Click to speak</span>
+  </div>
+
+  <!-- ─── TEXT INPUT ────────────────────────────────────── -->
+  <div class="input-row">
+    <input class="cmd-input" id="cmdInput" type="text"
+           placeholder='Type a command… e.g. "open chrome"'
+           onkeydown="if(event.key==='Enter') sendText()"/>
+    <button class="send-btn" onclick="sendText()">Send →</button>
+  </div>
+
+  <!-- ─── RESULT CARD ───────────────────────────────────── -->
+  <div class="result-card" id="resultCard" style="display:none;">
+    <div class="result-header">
+      <span>LAST RESPONSE</span>
+      <span class="intent-badge" id="intentBadge">—</span>
+    </div>
+    <div class="result-body">
+      <div class="field">
+        <span class="field-label">I heard</span>
+        <span class="field-value heard" id="heardText">—</span>
+      </div>
+      <div class="field">
+        <span class="field-label">Response</span>
+        <span class="field-value resp" id="responseText">—</span>
+      </div>
+      <div class="field" id="entityField" style="display:none;">
+        <span class="field-label">Extracted entity</span>
+        <span class="field-value" id="entityText" style="font-family:var(--mono);color:var(--accent2);">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── QUICK COMMANDS ────────────────────────────────── -->
+  <div class="quick-section">
+    <p class="section-label">Quick commands</p>
+    <div class="quick-grid" id="quickGrid">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- ─── COMMAND HISTORY ───────────────────────────────── -->
+  <div class="history-section" id="historySection" style="display:none;">
+    <p class="section-label">Command history</p>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <!-- ─── FOOTER ────────────────────────────────────────── -->
+  <footer>
+    <p>Voice Assistant · Java 17 + Spring Boot 3.2 · Running on localhost:8080</p>
+    <p style="margin-top:6px;">
+      <a href="/api/voice/health" target="_blank">health check</a>
+      &nbsp;·&nbsp;
+      B.Tech CSE Major Project
+    </p>
+  </footer>
+</div>
+
+<!-- ─── TOAST ────────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  VOICE ASSISTANT FRONTEND
+//  Communicates with Spring Boot backend via fetch() calls
+// ══════════════════════════════════════════════════════════
+
+const API = '';   // Same origin — Spring Boot serves this file
+let commandHistory = [];
+
+// ── Quick commands data ────────────────────────────────────
+const QUICK_CMDS = [
+  { icon:'🌐', text:'Open Chrome',      cmd:'open chrome' },
+  { icon:'💬', text:'Open WhatsApp',    cmd:'open whatsapp' },
+  { icon:'🕒', text:'What time is it?', cmd:'what time is it' },
+  { icon:'📅', text:'What is the date?',cmd:'what is today date' },
+  { icon:'🔍', text:'Search Google',    cmd:'search artificial intelligence' },
+  { icon:'🎵', text:'Play Music',       cmd:'play music' },
+  { icon:'📁', text:'Open Documents',   cmd:'open documents' },
+  { icon:'📸', text:'Take Screenshot',  cmd:'take screenshot' },
+  { icon:'😂', text:'Tell a Joke',      cmd:'tell me a joke' },
+  { icon:'🌤️', text:'Weather Today',    cmd:'what is the weather' },
+  { icon:'🧮', text:'Open Calculator',  cmd:'open calculator' },
+  { icon:'❓', text:'Help',             cmd:'help' },
+];
+
+// ════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  buildQuickCommands();
+  checkHealth();
+  setInterval(checkHealth, 30000);  // re-check every 30s
+});
+
+// ── Build quick command buttons ────────────────────────────
+function buildQuickCommands() {
+  const grid = document.getElementById('quickGrid');
+  QUICK_CMDS.forEach(({ icon, text, cmd }) => {
+    const btn = document.createElement('button');
+    btn.className = 'quick-btn';
+    btn.innerHTML = `<span class="icon">${icon}</span><span class="text">${text}</span>`;
+    btn.onclick = () => sendCommand(cmd);
+    grid.appendChild(btn);
+  });
+}
+
+// ── Health check ──────────────────────────────────────────
+async function checkHealth() {
+  const pill = document.getElementById('statusPill');
+  const txt  = document.getElementById('statusText');
+
+  try {
+    const res  = await fetch(`${API}/api/voice/health`, { signal: AbortSignal.timeout(3000) });
+    const data = await res.json();
+    pill.className = 'status-pill online';
+    txt.textContent = `online · ${data.os || 'unknown os'}`;
+  } catch {
+    pill.className = 'status-pill error';
+    txt.textContent = 'offline — start Spring Boot';
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  VOICE LISTEN
+// ════════════════════════════════════════════════════════
+async function startListening() {
+  const btn   = document.getElementById('micBtn');
+  const icon  = document.getElementById('micIcon');
+  const label = document.getElementById('micLabel');
+  const wave  = document.getElementById('waveform');
+
+  // Already running?
+  if (btn.classList.contains('listening') || btn.classList.contains('processing')) return;
+
+  // ── Listening state ────────────────────────────────────
+  btn.classList.add('listening');
+  icon.textContent  = '🔴';
+  label.textContent = 'Listening…';
+  label.classList.add('active');
+  wave.classList.add('active');
+
+  try {
+    const res  = await fetch(`${API}/api/voice/listen`, {
+      method: 'POST',
+      signal: AbortSignal.timeout(12000),
+    });
+
+    // ── Processing state ───────────────────────────────────
+    btn.classList.replace('listening', 'processing');
+    icon.textContent  = '⚙️';
+    label.textContent = 'Processing…';
+    wave.classList.remove('active');
+
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+    const data = await res.json();
+    showResult(data);
+
+  } catch (err) {
+    showToast('❌ ' + (err.name === 'AbortError' ? 'Timed out' : err.message));
+  } finally {
+    btn.classList.remove('listening', 'processing');
+    icon.textContent  = '🎙️';
+    label.textContent = 'Click to speak';
+    label.classList.remove('active');
+    wave.classList.remove('active');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  TEXT COMMAND
+// ════════════════════════════════════════════════════════
+function sendText() {
+  const input = document.getElementById('cmdInput');
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  sendCommand(text);
+}
+
+async function sendCommand(text) {
+  setLoadingState(true, text);
+
+  try {
+    const res  = await fetch(`${API}/api/voice/command`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ text }),
+      signal:  AbortSignal.timeout(10000),
+    });
+
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+    const data = await res.json();
+    showResult(data);
+
+  } catch (err) {
+    showToast('❌ ' + (err.name === 'AbortError'
+      ? 'Request timed out — is Spring Boot running?'
+      : err.message));
+    setLoadingState(false);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  SHOW RESULT
+// ════════════════════════════════════════════════════════
+function showResult(data) {
+  setLoadingState(false);
+
+  const card     = document.getElementById('resultCard');
+  const badge    = document.getElementById('intentBadge');
+  const heard    = document.getElementById('heardText');
+  const resp     = document.getElementById('responseText');
+  const entityF  = document.getElementById('entityField');
+  const entityV  = document.getElementById('entityText');
+
+  card.style.display = 'block';
+  card.className = 'result-card ' + (data.success ? 'success' : 'error');
+
+  badge.textContent  = data.intent  || 'UNKNOWN';
+  heard.textContent  = data.heard   || '(empty)';
+  resp.textContent   = data.response|| '(no response)';
+
+  if (data.entity && data.entity.trim()) {
+    entityF.style.display = 'flex';
+    entityV.textContent   = data.entity;
+  } else {
+    entityF.style.display = 'none';
+  }
+
+  // Animate in
+  card.style.opacity = '0';
+  card.style.transform = 'translateY(12px)';
+  requestAnimationFrame(() => {
+    card.style.transition = 'opacity 0.3s, transform 0.3s';
+    card.style.opacity = '1';
+    card.style.transform = 'translateY(0)';
+  });
+
+  // Add to history
+  addHistory(data);
+
+  // Toast notification
+  if (data.success) {
+    showToast('✓ ' + (data.intent || 'Done'));
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  HISTORY
+// ════════════════════════════════════════════════════════
+function addHistory(data) {
+  const now = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+  commandHistory.unshift({ cmd: data.heard, resp: data.response, time: now });
+  if (commandHistory.length > 20) commandHistory.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const section = document.getElementById('historySection');
+  const list    = document.getElementById('historyList');
+
+  if (!commandHistory.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = '';
+
+  commandHistory.forEach(({ cmd, resp, time }) => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.onclick   = () => sendCommand(cmd);
+    item.innerHTML = `
+      <div>
+        <div class="h-cmd">${escHtml(cmd)}</div>
+        <div class="h-resp">${escHtml(resp)}</div>
+      </div>
+      <span class="h-time">${time}</span>`;
+    list.appendChild(item);
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  UTILITIES
+// ════════════════════════════════════════════════════════
+function setLoadingState(loading, text = '') {
+  const input = document.getElementById('cmdInput');
+  const send  = document.querySelector('.send-btn');
+
+  if (loading) {
+    input.disabled = true;
+    input.placeholder = `Processing "${text}"…`;
+    send.textContent  = '…';
+    send.disabled     = true;
+  } else {
+    input.disabled = false;
+    input.placeholder = 'Type a command… e.g. "open chrome"';
+    send.textContent  = 'Send →';
+    send.disabled     = false;
+  }
+}
+
+let toastTimer;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>

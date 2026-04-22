@@ -1,0 +1,15 @@
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\executor\MusicPlayerExecutor.java
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\service\CommandParserService.java
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\VoiceAssistantApplication.java
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\config\AppConfig.java
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\executor\AppLauncherExecutor.java
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\executor\TimeDateExecutor.java
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\model\CommandResponse.java
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\controller\VoiceController.java
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\executor\FileManagerExecutor.java
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\service\TextToSpeechService.java
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\service\CommandRouterService.java
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\model\ParsedCommand.java
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\service\SpeechRecognitionService.java
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\executor\SystemCommandExecutor.java
+C:\Users\thaku\Downloads\voice-assistant-complete\voice-assistant\src\main\java\com\assistant\executor\WebSearchExecutor.java
